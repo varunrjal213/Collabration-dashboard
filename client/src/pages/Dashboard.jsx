@@ -3,13 +3,13 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { FiPlus, FiFolder, FiClock, FiUsers } from 'react-icons/fi';
+import ProjectModal from '../components/admin/ProjectModal';
 
 const Dashboard = () => {
     const { user } = useAuth();
     const [projects, setProjects] = useState([]);
-    const [newProjectName, setNewProjectName] = useState('');
-    const [newProjectDesc, setNewProjectDesc] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchProjects = async () => {
@@ -17,10 +17,14 @@ const Dashboard = () => {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
             };
-            const { data } = await axios.get('http://localhost:5000/api/projects', config);
-            setProjects(data);
+            const [projectsRes, tasksRes] = await Promise.all([
+                axios.get('http://localhost:5000/api/projects', config),
+                axios.get('http://localhost:5000/api/tasks/my-tasks', config)
+            ]);
+            setProjects(projectsRes.data);
+            setTasks(tasksRes.data);
         } catch (error) {
-            console.error('Error fetching projects:', error);
+            console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
         }
@@ -30,25 +34,7 @@ const Dashboard = () => {
         if (user) fetchProjects();
     }, [user]);
 
-    const handleCreateProject = async (e) => {
-        e.preventDefault();
-        try {
-            const config = {
-                headers: { Authorization: `Bearer ${user.token}` },
-            };
-            await axios.post('http://localhost:5000/api/projects', {
-                name: newProjectName,
-                description: newProjectDesc,
-                members: [],
-            }, config);
-            setShowModal(false);
-            setNewProjectName('');
-            setNewProjectDesc('');
-            fetchProjects();
-        } catch (error) {
-            console.error('Error creating project:', error);
-        }
-    };
+
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Workspace...</div>;
 
@@ -59,17 +45,51 @@ const Dashboard = () => {
                     <h1 style={{ fontSize: '2rem', letterSpacing: '-0.025em' }}>My Workspace</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Welcome back, {user?.username}. Here's what's happening.</p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="btn-primary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                    <FiPlus />
-                    <span>New Project</span>
-                </button>
+                {user?.role === 'admin' && (
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="btn-primary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <FiPlus />
+                        <span>New Project</span>
+                    </button>
+                )}
             </div>
 
+            {/* My Tasks Section */}
+            {tasks.length > 0 && (
+                <div style={{ marginBottom: '48px' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FiClock style={{ color: 'var(--primary)' }} />
+                        Tasks Assigned to You
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                        {tasks.map(task => (
+                            <div key={task._id} className="glass-card" style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', background: '#f1f5f9', borderRadius: '6px', color: '#64748b' }}>
+                                        {task.project?.name}
+                                    </span>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: task.status === 'Done' ? '#10b981' : '#f59e0b' }}>
+                                        {task.status}
+                                    </span>
+                                </div>
+                                <h3 style={{ fontSize: '0.925rem', marginBottom: '16px' }}>{task.title}</h3>
+                                {task.deadline && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        <FiClock />
+                                        <span>Due {new Date(task.deadline).toLocaleDateString()}</span>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                <h2 style={{ gridColumn: '1 / -1', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0px' }}>Active Projects</h2>
                 {projects.map((project) => (
                     <Link to={`/project/${project._id}`} key={project._id} style={{ textDecoration: 'none' }}>
                         <div className="glass-card" style={{
@@ -108,45 +128,12 @@ const Dashboard = () => {
                 ))}
             </div>
 
-            {showModal && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)',
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100
-                }}>
-                    <div className="glass-card" style={{ padding: '32px', borderRadius: '24px', width: '480px', background: 'white' }}>
-                        <h2 style={{ marginBottom: '8px' }}>Create New Project</h2>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.875rem' }}>Set up a new workspace for your team.</p>
-                        <form onSubmit={handleCreateProject}>
-                            <div style={{ marginBottom: '16px' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Project Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Website Redesign"
-                                    value={newProjectName}
-                                    onChange={(e) => setNewProjectName(e.target.value)}
-                                    required
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', outline: 'none' }}
-                                />
-                            </div>
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Description</label>
-                                <textarea
-                                    placeholder="Briefly describe the project goals..."
-                                    value={newProjectDesc}
-                                    onChange={(e) => setNewProjectDesc(e.target.value)}
-                                    required
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', minHeight: '100px', outline: 'none', resize: 'none' }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ padding: '10px 20px', background: '#f1f5f9', color: 'var(--text-main)', borderRadius: '10px' }}>Cancel</button>
-                                <button type="submit" className="btn-primary">Create Project</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <ProjectModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSuccess={fetchProjects}
+                user={user}
+            />
 
             <style>{`
                 @keyframes fadeIn {

@@ -156,25 +156,27 @@ const ProjectView = () => {
                 <p style={{ color: 'var(--text-muted)' }}>{project.description}</p>
             </div>
 
-            <form onSubmit={handleCreateTask} style={{ marginBottom: '32px', display: 'flex', gap: '12px' }}>
-                <input
-                    type="text"
-                    placeholder="Create a new task..."
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    style={{
-                        padding: '12px 16px',
-                        width: '400px',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-sm)',
-                        outline: 'none'
-                    }}
-                />
-                <button type="submit" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FiPlus /> Add Task
-                </button>
-            </form>
+            {user?.role === 'admin' && (
+                <form onSubmit={handleCreateTask} style={{ marginBottom: '32px', display: 'flex', gap: '12px' }}>
+                    <input
+                        type="text"
+                        placeholder="Create a new task..."
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        style={{
+                            padding: '12px 16px',
+                            width: '400px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border)',
+                            boxShadow: 'var(--shadow-sm)',
+                            outline: 'none'
+                        }}
+                    />
+                    <button type="submit" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FiPlus /> Add Task
+                    </button>
+                </form>
+            )}
 
             <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '20px' }}>
                 <DragDropContext onDragEnd={onDragEnd}>

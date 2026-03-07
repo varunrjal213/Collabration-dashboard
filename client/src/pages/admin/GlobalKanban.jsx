@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FiCheckSquare, FiUser, FiCalendar, FiFlag, FiSearch } from 'react-icons/fi';
+import { FiCheckSquare, FiUser, FiCalendar, FiFlag, FiSearch, FiPlus } from 'react-icons/fi';
+import TaskModal from '../../components/admin/TaskModal';
 
 const GlobalKanban = () => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchTasks = async () => {
         try {
@@ -55,22 +57,42 @@ const GlobalKanban = () => {
                     <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Global Kanban Board</h1>
                     <p style={{ color: '#64748b' }}>Cross-project task management and oversight.</p>
                 </div>
-                <div style={{ position: 'relative' }}>
-                    <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                    <input
-                        type="text"
-                        placeholder="Search tasks or projects..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
                         style={{
-                            padding: '12px 16px 12px 40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 24px',
+                            background: '#4f46e5',
+                            color: 'white',
+                            border: 'none',
                             borderRadius: '12px',
-                            border: '1px solid #e2e8f0',
-                            outline: 'none',
-                            width: '300px',
-                            background: 'white'
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.4)'
                         }}
-                    />
+                    >
+                        <FiPlus /> Create Task
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                        <input
+                            type="text"
+                            placeholder="Search tasks or projects..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                padding: '12px 16px 12px 40px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                outline: 'none',
+                                width: '300px',
+                                background: 'white'
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -146,6 +168,13 @@ const GlobalKanban = () => {
                     </div>
                 ))}
             </div>
+
+            <TaskModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={fetchTasks}
+                user={user}
+            />
 
             <style>{`
                 @keyframes fadeIn {

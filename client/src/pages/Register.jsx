@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import { FiUser, FiMail, FiLock, FiArrowRight, FiShield } from 'react-icons/fi';
 
 const Register = () => {
@@ -8,19 +8,20 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('member');
-    const navigate = useNavigate();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { register } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
         try {
-            await axios.post('http://localhost:5000/api/users', { username, email, password, role });
+            await register(username, email, password, role);
             navigate('/login');
         } catch (err) {
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            setError(err || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }

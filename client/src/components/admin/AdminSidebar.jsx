@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiGrid, FiUsers, FiLayers, FiCheckSquare, FiActivity, FiLogOut } from 'react-icons/fi';
+import { FiGrid, FiUsers, FiLayers, FiCheckSquare, FiActivity, FiLogOut, FiSettings } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminSidebar = () => {
@@ -8,10 +8,12 @@ const AdminSidebar = () => {
 
     const menuItems = [
         { name: 'Admin Overview', icon: <FiGrid />, path: '/admin/dashboard' },
-        { name: 'User & Teams', icon: <FiUsers />, path: '/admin/users' },
+        { name: 'User Management', icon: <FiUsers />, path: '/admin/users' },
+        { name: 'Team Management', icon: <FiUsers />, path: '/admin/teams' },
         { name: 'All Projects', icon: <FiLayers />, path: '/admin/projects' },
         { name: 'Global Kanban', icon: <FiCheckSquare />, path: '/admin/tasks' },
         { name: 'Live Activity', icon: <FiActivity />, path: '/admin/activity' },
+        { name: 'Settings', icon: <FiSettings />, path: '/settings' },
     ];
 
     return (

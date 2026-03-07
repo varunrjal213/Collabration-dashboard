@@ -11,8 +11,7 @@ const Navbar = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0 32px',
-            position: 'sticky',
-            top: 0,
+            flexShrink: 0,
             zIndex: 10
         }}>
             <div style={{ position: 'relative', width: '400px' }}>

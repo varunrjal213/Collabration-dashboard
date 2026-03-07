@@ -84,7 +84,9 @@ const deleteUser = async (req, res) => {
 // @access  Private/Admin
 const getAllProjects = async (req, res) => {
     try {
-        const projects = await Project.find({}).populate('createdBy', 'username email');
+        const projects = await Project.find({})
+            .populate('createdBy', 'username email')
+            .populate('members', 'username email');
         res.json(projects);
     } catch (error) {
         res.status(500).json({ message: error.message });

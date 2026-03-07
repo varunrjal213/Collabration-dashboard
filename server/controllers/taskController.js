@@ -22,7 +22,14 @@ const createTask = async (req, res) => {
 // @route   GET /api/tasks/:projectId
 // @access  Private
 const getTasks = async (req, res) => {
-    const tasks = await Task.find({ project: req.params.projectId })
+    let query = { project: req.params.projectId };
+
+    // If not admin, only show tasks assigned to the user
+    if (req.user.role !== 'admin') {
+        query.assignedTo = req.user._id;
+    }
+
+    const tasks = await Task.find(query)
         .populate('assignedTo', 'username email');
 
     res.json(tasks);
@@ -34,17 +41,32 @@ const getTasks = async (req, res) => {
 const updateTask = async (req, res) => {
     const task = await Task.findById(req.params.id);
 
-    if (task) {
-        task.status = req.body.status || task.status;
-        task.title = req.body.title || task.title;
-        task.description = req.body.description || task.description;
-        task.assignedTo = req.body.assignedTo || task.assignedTo;
-
-        const updatedTask = await task.save();
-        res.json(updatedTask);
-    } else {
-        res.status(404).json({ message: 'Task not found' });
+    if (!task) {
+        return res.status(404).json({ message: 'Task not found' });
     }
+
+    // Role-based update restriction
+    if (req.user.role !== 'admin' && task.assignedTo.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to update this task' });
+    }
+
+    task.status = req.body.status || task.status;
+    task.title = req.body.title || task.title;
+    task.description = req.body.description || task.description;
+    task.assignedTo = req.body.assignedTo || task.assignedTo;
+
+    const updatedTask = await task.save();
+    res.json(updatedTask);
 };
 
-module.exports = { createTask, getTasks, updateTask };
+// @desc    Get tasks assigned to the current user
+// @route   GET /api/tasks/my-tasks
+// @access  Private
+const getMyTasks = async (req, res) => {
+    const tasks = await Task.find({ assignedTo: req.user._id })
+        .populate('project', 'name');
+
+    res.json(tasks);
+};
+
+module.exports = { createTask, getTasks, updateTask, getMyTasks };

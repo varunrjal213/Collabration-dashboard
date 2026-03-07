@@ -7,8 +7,8 @@ const Sidebar = () => {
     const location = useLocation();
 
     const menuItems = [
-        { name: 'Dashboard', icon: <FiGrid />, path: '/dashboard' },
-        { name: 'Team', icon: <FiUsers />, path: '/team' },
+        { name: 'Dashboard', icon: <FiGrid />, path: user?.role === 'admin' ? '/admin/dashboard' : '/dashboard' },
+        { name: 'Team', icon: <FiUsers />, path: user?.role === 'admin' ? '/admin/teams' : '/team' },
         { name: 'Settings', icon: <FiSettings />, path: '/settings' },
     ];
 
@@ -23,7 +23,10 @@ const Sidebar = () => {
             borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            padding: '24px'
+            padding: '24px',
+            height: '100vh',
+            overflow: 'hidden',
+            flexShrink: 0
         }}>
             <div style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '32px', height: '32px', background: 'var(--primary)', borderRadius: '8px' }}></div>

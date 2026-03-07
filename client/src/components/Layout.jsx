@@ -4,11 +4,11 @@ import Navbar from './Navbar';
 
 const Layout = () => {
     return (
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             <Sidebar />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <Navbar />
-                <main style={{ padding: '24px', overflowY: 'auto' }}>
+                <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
                     <Outlet />
                 </main>
             </div>

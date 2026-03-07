@@ -1,3 +1,5 @@
+const TeamMessage = require('../models/teamMessageModel');
+
 const socketHandler = (io) => {
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
@@ -12,15 +14,23 @@ const socketHandler = (io) => {
             console.log(`User left project: ${projectId}`);
         });
 
+        socket.on('joinTeam', (teamId) => {
+            socket.join(teamId);
+            console.log(`User joined team: ${teamId}`);
+        });
+
+        socket.on('leaveTeam', (teamId) => {
+            socket.leave(teamId);
+            console.log(`User left team: ${teamId}`);
+        });
+
         socket.on('joinAdmin', () => {
             socket.join('adminRoom');
             console.log(`Admin joined monitoring: ${socket.id}`);
         });
 
         socket.on('taskUpdated', (updatedTask) => {
-            // Broadcast to everyone in the project room
             io.to(updatedTask.project).emit('taskUpdated', updatedTask);
-            // Broadcast to admin monitoring room
             io.to('adminRoom').emit('admin:activity', {
                 type: 'TASK_UPDATE',
                 data: updatedTask,
@@ -29,14 +39,27 @@ const socketHandler = (io) => {
         });
 
         socket.on('commentAdded', (newComment) => {
-            // Broadcast new comment to the project room
             io.to(newComment.project).emit('commentAdded', newComment);
-            // Broadcast to admin monitoring room
             io.to('adminRoom').emit('admin:activity', {
                 type: 'COMMENT_ADDED',
                 data: newComment,
                 timestamp: new Date()
             });
+        });
+
+        socket.on('teamMessage', async (data) => {
+            try {
+                const newMessage = await TeamMessage.create({
+                    team: data.team,
+                    sender: data.sender._id,
+                    content: data.content
+                });
+
+                const populatedMessage = await TeamMessage.findById(newMessage._id).populate('sender', 'username email');
+                io.to(data.team).emit('teamMessage', populatedMessage);
+            } catch (error) {
+                console.error('Error saving team message:', error);
+            }
         });
 
         socket.on('disconnect', () => {
