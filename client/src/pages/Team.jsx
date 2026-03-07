@@ -131,9 +131,10 @@ const Team = () => {
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '20px 28px', borderRadius: '20px',
-                background: 'linear-gradient(135deg, #6366f1, #818cf8)',
-                color: 'white', flexShrink: 0,
-                boxShadow: '0 8px 24px rgba(99,102,241,0.25)'
+                background: '#ffffff',
+                color: '#1e293b', flexShrink: 0,
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
