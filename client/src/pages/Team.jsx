@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { FiSearch, FiSend, FiSmile, FiPaperclip, FiMoreVertical, FiUsers } from 'react-icons/fi';
+import { FiSearch, FiSend, FiSmile, FiPaperclip, FiMoreVertical, FiUsers, FiChevronDown } from 'react-icons/fi';
 import io from 'socket.io-client';
 
 const ENDPOINT = "http://localhost:5000";
@@ -34,6 +34,7 @@ const Avatar = ({ name, size = 40 }) => {
 
 const Team = () => {
     const { user } = useAuth();
+    const [teams, setTeams] = useState([]);
     const [team, setTeam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [messages, setMessages] = useState([]);
@@ -52,10 +53,8 @@ const Team = () => {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
                 const { data } = await axios.get(`${ENDPOINT}/api/teams`, config);
                 if (data && data.length > 0) {
-                    const currentTeam = data[0];
-                    setTeam(currentTeam);
-                    const msgRes = await axios.get(`${ENDPOINT}/api/team-messages/${currentTeam._id}`, config);
-                    setMessages(msgRes.data);
+                    setTeams(data);
+                    setTeam(data[0]);
                 }
             } catch (error) {
                 console.error('Error fetching team data:', error);
@@ -65,6 +64,20 @@ const Team = () => {
         };
         if (user) fetchData();
     }, [user]);
+
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (!team?._id) return;
+            try {
+                const config = { headers: { Authorization: `Bearer ${user.token}` } };
+                const msgRes = await axios.get(`${ENDPOINT}/api/team-messages/${team._id}`, config);
+                setMessages(msgRes.data);
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+            }
+        };
+        fetchMessages();
+    }, [team?._id, user]);
 
     useEffect(() => {
         if (!team?._id) return;
@@ -109,8 +122,8 @@ const Team = () => {
         );
     }
 
-    const filteredMembers = team.members.filter(m =>
-        m.username?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredTeams = teams.filter(t =>
+        t.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Group messages by date
@@ -127,57 +140,6 @@ const Team = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--header-h) - 48px)', gap: '20px' }}>
-            {/* ──── TEAM INFO CARD ──── */}
-            <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '20px 28px', borderRadius: '20px',
-                background: '#ffffff',
-                color: '#1e293b', flexShrink: 0,
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{
-                        width: '52px', height: '52px', borderRadius: '14px',
-                        background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.5rem'
-                    }}>
-                        <FiUsers />
-                    </div>
-                    <div>
-                        <h1 style={{ fontSize: '1.35rem', fontWeight: 800 }}>{team.name}</h1>
-                        <p style={{ fontSize: '0.8rem', opacity: 0.85 }}>{team.members.length} members in this team</p>
-                    </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {team.members.slice(0, 5).map((m, i) => (
-                        <div key={m._id} title={m.username} style={{
-                            width: '36px', height: '36px', borderRadius: '50%',
-                            background: getColor(m.username),
-                            border: '3px solid rgba(99,102,241,0.8)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontWeight: 700, fontSize: '0.8rem',
-                            marginLeft: i > 0 ? '-10px' : '0', zIndex: 5 - i
-                        }}>
-                            {m.username?.[0]?.toUpperCase()}
-                        </div>
-                    ))}
-                    {team.members.length > 5 && (
-                        <div style={{
-                            width: '36px', height: '36px', borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(4px)',
-                            border: '3px solid rgba(99,102,241,0.8)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontWeight: 700, fontSize: '0.7rem',
-                            marginLeft: '-10px'
-                        }}>
-                            +{team.members.length - 5}
-                        </div>
-                    )}
-                </div>
-            </div>
-
             {/* ──── CHAT AREA ──── */}
             <div style={{
                 display: 'flex', flex: 1, minHeight: 0,
@@ -196,7 +158,7 @@ const Team = () => {
                             <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                             <input
                                 type="text"
-                                placeholder="Search members..."
+                                placeholder="Search teams..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
@@ -208,47 +170,38 @@ const Team = () => {
                         </div>
                     </div>
 
-                    {/* Horizontal Avatars */}
-                    <div style={{
-                        display: 'flex', gap: '16px', padding: '0 20px 16px',
-                        borderBottom: '1px solid #f1f5f9', overflowX: 'auto', flexShrink: 0
-                    }}>
-                        {team.members.slice(0, 6).map(m => (
-                            <div key={m._id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <Avatar name={m.username} size={44} />
-                                    <span style={{
-                                        position: 'absolute', bottom: '1px', right: '1px',
-                                        width: '10px', height: '10px', borderRadius: '50%',
-                                        background: '#22c55e', border: '2px solid white'
-                                    }} />
-                                </div>
-                                <span style={{ fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                    {m.username?.split(' ')[0]}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Members List */}
-                    <div style={{ padding: '12px 12px 0' }}>
+                    {/* Teams List */}
+                    <div style={{ padding: '0 12px' }}>
                         <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8', padding: '0 8px 8px' }}>
-                            Team Members
+                            Your Teams
                         </p>
                     </div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
-                        {filteredMembers.map(member => (
-                            <div key={member._id} style={{
+                        {filteredTeams.map(t => (
+                            <div key={t._id} style={{
                                 display: 'flex', alignItems: 'center', gap: '12px',
                                 padding: '12px 20px', cursor: 'pointer',
                                 transition: 'background 0.15s',
-                                borderLeft: '3px solid transparent'
+                                background: team._id === t._id ? '#f8fafc' : 'transparent',
+                                borderLeft: `3px solid ${team._id === t._id ? '#6366f1' : 'transparent'}`
                             }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderLeftColor = '#6366f1'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderLeftColor = 'transparent'; }}
+                                onClick={() => setTeam(t)}
+                                onMouseEnter={(e) => {
+                                    if(team._id !== t._id) e.currentTarget.style.background = '#f8fafc';
+                                }}
+                                onMouseLeave={(e) => {
+                                    if(team._id !== t._id) e.currentTarget.style.background = 'transparent';
+                                }}
                             >
                                 <div style={{ position: 'relative' }}>
-                                    <Avatar name={member.username} size={42} />
+                                    <div style={{
+                                        width: '42px', height: '42px', borderRadius: '50%',
+                                        background: getColor(t.name), display: 'flex', alignItems: 'center',
+                                        justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '1rem',
+                                        flexShrink: 0
+                                    }}>
+                                        {t.name?.[0]?.toUpperCase()}
+                                    </div>
                                     <span style={{
                                         position: 'absolute', bottom: '1px', right: '1px',
                                         width: '9px', height: '9px', borderRadius: '50%',
@@ -257,13 +210,10 @@ const Team = () => {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700 }}>{member.username}</h4>
-                                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
-                                            {member.role === 'admin' ? 'Admin' : 'Member'}
-                                        </span>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{t.name}</h4>
                                     </div>
-                                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {member.email}
+                                    <p style={{ fontSize: '0.78rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {t.members?.length || 0} members
                                     </p>
                                 </div>
                             </div>
@@ -296,9 +246,34 @@ const Team = () => {
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: '#64748b' }}>
-                            <FiSearch style={{ fontSize: '1.1rem', cursor: 'pointer' }} />
-                            <FiUsers style={{ fontSize: '1.1rem', cursor: 'pointer' }} />
-                            <FiMoreVertical style={{ fontSize: '1.1rem', cursor: 'pointer' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', marginRight: '8px' }}>
+                                {team.members.slice(0, 4).map((m, i) => (
+                                    <div key={m._id} title={m.username} style={{
+                                        width: '28px', height: '28px', borderRadius: '50%',
+                                        background: getColor(m.username),
+                                        border: '2px solid white',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: 'white', fontWeight: 700, fontSize: '0.7rem',
+                                        marginLeft: i > 0 ? '-8px' : '0', zIndex: 4 - i
+                                    }}>
+                                        {m.username?.[0]?.toUpperCase()}
+                                    </div>
+                                ))}
+                                {team.members.length > 4 && (
+                                    <div style={{
+                                        width: '28px', height: '28px', borderRadius: '50%',
+                                        background: '#e2e8f0',
+                                        border: '2px solid white',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#64748b', fontWeight: 700, fontSize: '0.6rem',
+                                        marginLeft: '-8px'
+                                    }}>
+                                        +{team.members.length - 4}
+                                    </div>
+                                )}
+                            </div>
+                            <FiSearch style={{ fontSize: '1.2rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1e293b'} onMouseLeave={(e) => e.target.style.color = '#64748b'} />
+                            <FiMoreVertical style={{ fontSize: '1.2rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={(e) => e.target.style.color = '#1e293b'} onMouseLeave={(e) => e.target.style.color = '#64748b'} />
                         </div>
                     </div>
 

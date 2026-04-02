@@ -9,7 +9,7 @@ const Sidebar = () => {
     const menuItems = [
         { name: 'Dashboard', icon: <FiGrid />, path: user?.role === 'admin' ? '/admin/dashboard' : '/dashboard' },
         { name: 'Team', icon: <FiUsers />, path: user?.role === 'admin' ? '/admin/teams' : '/team' },
-        { name: 'Settings', icon: <FiSettings />, path: '/settings' },
+        { name: 'Settings', icon: <FiSettings />, path: user?.role === 'admin' ? '/admin/settings' : '/settings' },
     ];
 
     if (user?.role === 'admin') {

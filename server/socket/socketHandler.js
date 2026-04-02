@@ -62,6 +62,15 @@ const socketHandler = (io) => {
             }
         });
 
+        socket.on('noteAdded', (data) => {
+            io.to(data.projectId).emit('noteAdded', data);
+            io.to('adminRoom').emit('admin:activity', {
+                type: 'NOTE_ADDED',
+                data: data,
+                timestamp: new Date()
+            });
+        });
+
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id);
         });

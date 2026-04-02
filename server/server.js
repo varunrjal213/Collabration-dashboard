@@ -13,6 +13,7 @@ const fileRoutes = require('./routes/fileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const teamMessageRoutes = require('./routes/teamMessageRoutes');
+const noteRoutes = require('./routes/noteRoutes');
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use('/api/files', fileRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/team-messages', teamMessageRoutes);
+app.use('/api/notes', noteRoutes);
 
 const socketHandler = require('./socket/socketHandler');
 

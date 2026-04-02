@@ -5,6 +5,8 @@ import { FiX } from 'react-icons/fi';
 const ProjectModal = ({ isOpen, onClose, onSuccess, user }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -17,11 +19,15 @@ const ProjectModal = ({ isOpen, onClose, onSuccess, user }) => {
             await axios.post('http://localhost:5000/api/projects', {
                 name,
                 description,
+                startDate,
+                endDate,
                 members: [],
             }, config);
 
             setName('');
             setDescription('');
+            setStartDate('');
+            setEndDate('');
             onSuccess();
             onClose();
         } catch (error) {
@@ -93,6 +99,36 @@ const ProjectModal = ({ isOpen, onClose, onSuccess, user }) => {
                                 fontSize: '0.925rem'
                             }}
                         />
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>Start Date</label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                required
+                                style={{
+                                    width: '100%', padding: '12px 16px', borderRadius: '12px',
+                                    border: '1px solid #e2e8f0', outline: 'none',
+                                    fontSize: '0.925rem'
+                                }}
+                            />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>End Date</label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                required
+                                style={{
+                                    width: '100%', padding: '12px 16px', borderRadius: '12px',
+                                    border: '1px solid #e2e8f0', outline: 'none',
+                                    fontSize: '0.925rem'
+                                }}
+                            />
+                        </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                         <button

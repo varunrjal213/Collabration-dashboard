@@ -76,6 +76,7 @@ function App() {
                         <Route path="teams" element={<TeamManagement />} />
                         {/* Placeholder for other admin pages */}
                         <Route path="activity" element={<ActivityFeed />} />
+                        <Route path="settings" element={<Settings />} />
                     </Route>
                 </Routes>
             </AuthProvider>

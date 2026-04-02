@@ -5,12 +5,14 @@ const Task = require('../models/taskModel');
 // @route   POST /api/projects
 // @access  Private
 const createProject = async (req, res) => {
-    const { name, description, members } = req.body;
+    const { name, description, members, startDate, endDate } = req.body;
 
     const project = await Project.create({
         name,
         description,
         members,
+        startDate,
+        endDate,
         createdBy: req.user._id,
     });
 
@@ -21,21 +23,36 @@ const createProject = async (req, res) => {
 // @route   GET /api/projects
 // @access  Private
 const getProjects = async (req, res) => {
-    let projects;
+    let projectList;
 
     if (req.user.role === 'admin') {
-        projects = await Project.find({}).populate('members', 'username email');
+        projectList = await Project.find({}).populate('members', 'username email');
     } else {
-        // Find tasks assigned to this member
         const assignedTasks = await Task.find({ assignedTo: req.user._id });
         const projectIds = [...new Set(assignedTasks.map(task => task.project.toString()))];
-
-        projects = await Project.find({
-            _id: { $in: projectIds }
-        }).populate('members', 'username email');
+        projectList = await Project.find({ _id: { $in: projectIds } }).populate('members', 'username email');
     }
 
-    res.json(projects);
+    // Enhance project objects with task stats and next milestone
+    const projectsWithStats = await Promise.all(projectList.map(async (project) => {
+        const tasks = await Task.find({ project: project._id });
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter(t => t.status === 'Done').length;
+        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+        
+        // Find the next most urgent pending task (if any)
+        const nextTask = tasks.find(t => t.status !== 'Done') || null;
+        
+        return {
+            ...project._doc,
+            totalTasks,
+            completedTasks,
+            progress,
+            nextTask: nextTask ? { title: nextTask.title, deadline: nextTask.deadline } : null
+        };
+    }));
+
+    res.json(projectsWithStats);
 };
 
 // @desc    Get project by ID

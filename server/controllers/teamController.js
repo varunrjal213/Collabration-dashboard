@@ -34,8 +34,8 @@ const getTeams = async (req, res) => {
         const teams = await Team.find({}).populate('members', 'username email role');
         res.json(teams);
     } else {
-        const team = await Team.findOne({ members: req.user._id }).populate('members', 'username email role');
-        res.json(team ? [team] : []);
+        const teams = await Team.find({ members: req.user._id }).populate('members', 'username email role');
+        res.json(teams);
     }
 };
 

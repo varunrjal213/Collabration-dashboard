@@ -13,7 +13,7 @@ const AdminSidebar = () => {
         { name: 'All Projects', icon: <FiLayers />, path: '/admin/projects' },
         { name: 'Global Kanban', icon: <FiCheckSquare />, path: '/admin/tasks' },
         { name: 'Live Activity', icon: <FiActivity />, path: '/admin/activity' },
-        { name: 'Settings', icon: <FiSettings />, path: '/settings' },
+        { name: 'Settings', icon: <FiSettings />, path: '/admin/settings' },
     ];
 
     return (
