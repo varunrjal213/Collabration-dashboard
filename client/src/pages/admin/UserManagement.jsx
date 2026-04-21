@@ -14,7 +14,7 @@ const UserManagement = () => {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
             };
-            const { data } = await axios.get('http://localhost:5000/api/admin/users', config);
+            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/users`, config);
             setUsers(data);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -32,7 +32,7 @@ const UserManagement = () => {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
             };
-            await axios.put(`http://localhost:5000/api/admin/users/${userId}/role`, { role: newRole }, config);
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, { role: newRole }, config);
             fetchUsers();
         } catch (error) {
             alert('Failed to update role');
@@ -45,7 +45,7 @@ const UserManagement = () => {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
             };
-            await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, config);
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, config);
             fetchUsers();
         } catch (error) {
             alert('Failed to delete user');

@@ -16,7 +16,7 @@ const ProjectModal = ({ isOpen, onClose, onSuccess, user }) => {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
             };
-            await axios.post('http://localhost:5000/api/projects', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/projects`, {
                 name,
                 description,
                 startDate,

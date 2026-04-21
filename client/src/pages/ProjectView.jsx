@@ -6,7 +6,7 @@ import io from 'socket.io-client';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { FiPlus, FiMessageCircle, FiPaperclip, FiX, FiArrowLeft, FiChevronLeft, FiChevronRight, FiCalendar, FiClock, FiActivity } from 'react-icons/fi';
 
-const ENDPOINT = "http://localhost:5000";
+const ENDPOINT = import.meta.env.VITE_API_URL;
 
 // Helper to get all calendar days in a month grid
 const getCalendarDays = (year, month) => {

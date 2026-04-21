@@ -56,8 +56,8 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, 
             try {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
                 const [projectsRes, usersRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/admin/projects', config),
-                    axios.get('http://localhost:5000/api/admin/users', config)
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/admin/projects`, config),
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/admin/users`, config)
                 ]);
 
                 setProjects(projectsRes.data);

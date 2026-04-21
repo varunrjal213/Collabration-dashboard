@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiSearch, FiSend, FiSmile, FiPaperclip, FiMoreVertical, FiUsers, FiChevronDown } from 'react-icons/fi';
 import io from 'socket.io-client';
 
-const ENDPOINT = "http://localhost:5000";
+const ENDPOINT = import.meta.env.VITE_API_URL;
 
 const AVATAR_COLORS = [
     '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6',

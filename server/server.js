@@ -24,12 +24,14 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173", // Vite default port
+        origin: process.env.CLIENT_URL,
         methods: ["GET", "POST"]
     }
 });
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL
+}));
 app.use(express.json());
 
 app.use('/api/users', userRoutes);

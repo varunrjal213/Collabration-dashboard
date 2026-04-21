@@ -16,7 +16,7 @@ const AdminDashboard = () => {
                 const config = {
                     headers: { Authorization: `Bearer ${user.token}` },
                 };
-                const { data } = await axios.get('http://localhost:5000/api/admin/stats', config);
+                const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/stats`, config);
                 setStats(data);
             } catch (error) {
                 console.error('Error fetching admin stats:', error);
@@ -28,7 +28,8 @@ const AdminDashboard = () => {
         if (user) fetchStats();
 
         // Socket logic for live activity
-        const socket = io('http://localhost:5000');
+        const ENDPOINT = import.meta.env.VITE_API_URL;
+        const socket = io(ENDPOINT);
         socket.emit('joinAdmin');
 
         socket.on('admin:activity', (activity) => {

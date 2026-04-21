@@ -19,7 +19,7 @@ const Settings = () => {
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const { data } = await axios.put('http://localhost:5000/api/users/profile', { username, email }, config);
+            const { data } = await axios.put(`${import.meta.env.VITE_API_URL}/api/users/profile`, { username, email }, config);
 
             // Update local storage and context
             const updatedUser = { ...data };
@@ -52,7 +52,7 @@ const Settings = () => {
         setLoading(true);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.put('http://localhost:5000/api/users/profile', { password }, config);
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/users/profile`, { password }, config);
             setMessage({ type: 'success', text: 'Password changed successfully!' });
             setPassword('');
             setConfirmPassword('');

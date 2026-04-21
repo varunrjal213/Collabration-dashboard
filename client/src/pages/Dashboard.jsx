@@ -6,7 +6,7 @@ import { FiPlus, FiFolder, FiClock, FiUsers, FiCheckCircle, FiActivity, FiTrendi
 import ProjectModal from '../components/admin/ProjectModal';
 import io from 'socket.io-client';
 
-const ENDPOINT = "http://localhost:5000";
+const ENDPOINT = import.meta.env.VITE_API_URL;
 
 const Dashboard = () => {
     const { user } = useAuth();

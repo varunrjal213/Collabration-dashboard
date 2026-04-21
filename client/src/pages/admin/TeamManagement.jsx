@@ -20,8 +20,8 @@ const TeamManagement = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const [teamsRes, usersRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/teams', config),
-                axios.get('http://localhost:5000/api/admin/users', config)
+                axios.get(`${import.meta.env.VITE_API_URL}/api/teams`, config),
+                axios.get(`${import.meta.env.VITE_API_URL}/api/admin/users`, config)
             ]);
             setTeams(teamsRes.data);
             setAllUsers(usersRes.data);
@@ -40,7 +40,7 @@ const TeamManagement = () => {
         e.preventDefault();
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post('http://localhost:5000/api/teams', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/teams`, {
                 name: newTeamName,
                 members: selectedMembers
             }, config);
@@ -61,7 +61,7 @@ const TeamManagement = () => {
     const confirmDeleteTeam = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`http://localhost:5000/api/teams/${deleteConfirmId}`, config);
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/teams/${deleteConfirmId}`, config);
             setDeleteConfirmId(null);
             fetchData();
         } catch (error) {

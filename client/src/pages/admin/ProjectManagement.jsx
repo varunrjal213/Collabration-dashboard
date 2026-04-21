@@ -21,7 +21,7 @@ const ProjectManagement = () => {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
             };
-            const { data } = await axios.get('http://localhost:5000/api/admin/projects', config);
+            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/projects`, config);
             setProjects(data);
         } catch (error) {
             console.error('Error fetching admin projects:', error);
@@ -37,7 +37,7 @@ const ProjectManagement = () => {
     const confirmDelete = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`http://localhost:5000/api/projects/${deleteConfirmId}`, config);
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/projects/${deleteConfirmId}`, config);
             setDeleteConfirmId(null);
             fetchProjects();
         } catch (error) {
