@@ -20,7 +20,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, 
     const fetchTaskNotes = async (taskId) => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const { data } = await axios.get(`http://localhost:5000/api/notes/${taskId}`, config);
+            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/notes/${taskId}`, config);
             setTaskNotes(data);
         } catch (error) {
             console.error('Error fetching task notes:', error);
@@ -79,9 +79,9 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             if (task) {
-                await axios.put(`http://localhost:5000/api/tasks/${task._id}`, formData, config);
+                await axios.put(`${import.meta.env.VITE_API_URL}/api/tasks/${task._id}`, formData, config);
             } else {
-                await axios.post('http://localhost:5000/api/tasks', formData, config);
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/tasks`, formData, config);
             }
             onSuccess();
             onClose();
