@@ -69,4 +69,22 @@ const getMyTasks = async (req, res) => {
     res.json(tasks);
 };
 
-module.exports = { createTask, getTasks, updateTask, getMyTasks };
+// @desc    Delete a task
+// @route   DELETE /api/tasks/:id
+// @access  Private
+const deleteTask = async (req, res) => {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+        return res.status(404).json({ message: 'Task not found' });
+    }
+
+    if (req.user.role !== 'admin' && task.assignedTo.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to delete this task' });
+    }
+
+    await task.deleteOne();
+    res.json({ message: 'Task removed' });
+};
+
+module.exports = { createTask, getTasks, updateTask, getMyTasks, deleteTask };

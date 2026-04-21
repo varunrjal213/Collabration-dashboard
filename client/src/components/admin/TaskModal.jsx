@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FiX, FiCheck, FiCalendar, FiUser, FiLayers } from 'react-icons/fi';
+import { FiX, FiCheck, FiCalendar, FiUser, FiLayers, FiTrash2 } from 'react-icons/fi';
 
 const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, task = null }) => {
     const [projects, setProjects] = useState([]);
@@ -87,6 +87,21 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, 
             onClose();
         } catch (error) {
             alert(error.response?.data?.message || `Failed to ${task ? 'update' : 'create'} task`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this task?')) return;
+        setLoading(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/tasks/${task._id}`, config);
+            onSuccess();
+            onClose();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to delete task');
         } finally {
             setLoading(false);
         }
@@ -225,28 +240,55 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, 
                         </div>
                     )}
 
-                    <button
-                        disabled={loading}
-                        type="submit"
-                        style={{
-                            width: '100%',
-                            padding: '14px',
-                            background: '#4f46e5',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '12px',
-                            fontWeight: 700,
-                            fontSize: '1rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {loading ? (task ? 'Updating...' : 'Creating...') : <><FiCheck /> {task ? 'Update Task' : 'Create Task'}</>}
-                    </button>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        {task && (
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={loading}
+                                style={{
+                                    padding: '14px',
+                                    background: '#fef2f2',
+                                    color: '#ef4444',
+                                    border: '1px solid #fca5a5',
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    flexShrink: 0
+                                }}
+                            >
+                                <FiTrash2 /> Delete
+                            </button>
+                        )}
+                        <button
+                            disabled={loading}
+                            type="submit"
+                            style={{
+                                flex: 1,
+                                padding: '14px',
+                                background: '#4f46e5',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '12px',
+                                fontWeight: 700,
+                                fontSize: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            {loading ? (task ? 'Updating...' : 'Creating...') : <><FiCheck /> {task ? 'Update Task' : 'Create Task'}</>}
+                        </button>
+                    </div>
                 </form>
             </div>
             <style>{`
