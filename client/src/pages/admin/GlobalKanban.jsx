@@ -11,6 +11,8 @@ const GlobalKanban = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const [selectedTask, setSelectedTask] = useState(null);
+
     const fetchTasks = async () => {
         try {
             const config = {
@@ -29,7 +31,18 @@ const GlobalKanban = () => {
         if (user) fetchTasks();
     }, [user]);
 
-    const handleStatusChange = async (taskId, newStatus) => {
+    const handleTaskClick = (task) => {
+        setSelectedTask(task);
+        setIsModalOpen(true);
+    };
+
+    const handleCreateClick = () => {
+        setSelectedTask(null);
+        setIsModalOpen(true);
+    };
+
+    const handleStatusChange = async (taskId, newStatus, e) => {
+        e.stopPropagation(); // Prevent opening modal when changing status
         try {
             const config = {
                 headers: { Authorization: `Bearer ${user.token}` },
@@ -59,7 +72,7 @@ const GlobalKanban = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                     <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={handleCreateClick}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -117,7 +130,9 @@ const GlobalKanban = () => {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {filteredTasks.filter(t => t.status === column).map(task => (
-                                <div key={task._id} style={{
+                                <div key={task._id} 
+                                    onClick={() => handleTaskClick(task)}
+                                    style={{
                                     background: 'white',
                                     padding: '16px',
                                     borderRadius: '16px',
@@ -140,7 +155,7 @@ const GlobalKanban = () => {
                                         </span>
                                         <select
                                             value={task.status}
-                                            onChange={(e) => handleStatusChange(task._id, e.target.value)}
+                                            onChange={(e) => handleStatusChange(task._id, e.target.value, e)}
                                             style={{ border: 'none', background: 'transparent', fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', outline: 'none' }}
                                         >
                                             {columns.map(c => <option key={c} value={c}>{c}</option>)}
@@ -171,9 +186,10 @@ const GlobalKanban = () => {
 
             <TaskModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => { setIsModalOpen(false); setSelectedTask(null); }}
                 onSuccess={fetchTasks}
                 user={user}
+                task={selectedTask}
             />
 
             <style>{`

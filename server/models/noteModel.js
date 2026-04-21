@@ -4,7 +4,7 @@ const noteSchema = mongoose.Schema(
     {
         task: {
             type: mongoose.Schema.Types.ObjectId,
-            required: true,
+            required: false,
             ref: 'Task',
         },
         author: {
@@ -20,6 +20,10 @@ const noteSchema = mongoose.Schema(
         content: {
             type: String,
             required: true,
+        },
+        date: {
+            type: Date,
+            default: Date.now,
         },
     },
     {

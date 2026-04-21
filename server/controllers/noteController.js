@@ -15,26 +15,34 @@ const getNotes = async (req, res) => {
     }
 };
 
-// @desc    Create a new note
-// @route   POST /api/notes
-// @access  Private
 const createNote = async (req, res) => {
     try {
-        const { content, taskId } = req.body;
+        const { content, taskId, projectId, date } = req.body;
 
-        const task = await Task.findById(taskId);
-        if (!task) {
-            return res.status(404).json({ message: "Task not found" });
+        let noteData = {
+            content,
+            author: req.user._id,
+            date: date || Date.now(),
+        };
+
+        if (taskId) {
+            const task = await Task.findById(taskId);
+            if (!task) {
+                return res.status(404).json({ message: "Task not found" });
+            }
+            noteData.task = taskId;
+            noteData.project = task.project;
+        } else if (projectId) {
+            noteData.project = projectId;
+        } else {
+            return res.status(400).json({ message: "Task ID or Project ID is required" });
         }
 
-        const note = await Note.create({
-            content,
-            task: taskId,
-            project: task.project,
-            author: req.user._id,
-        });
+        const note = await Note.create(noteData);
 
-        const populatedNote = await Note.findById(note._id).populate('author', 'username email role');
+        const populatedNote = await Note.findById(note._id)
+            .populate('author', 'username email role')
+            .populate('task', 'title');
 
         res.status(201).json(populatedNote);
     } catch (error) {

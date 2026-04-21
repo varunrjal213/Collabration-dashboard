@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FiX, FiCheck, FiCalendar, FiUser, FiLayers } from 'react-icons/fi';
 
-const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }) => {
+const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user, task = null }) => {
     const [projects, setProjects] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [taskNotes, setTaskNotes] = useState([]);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -15,6 +16,40 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }
         deadline: '',
         status: 'To-Do'
     });
+
+    const fetchTaskNotes = async (taskId) => {
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const { data } = await axios.get(`http://localhost:5000/api/notes/${taskId}`, config);
+            setTaskNotes(data);
+        } catch (error) {
+            console.error('Error fetching task notes:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (task) {
+            setFormData({
+                title: task.title || '',
+                description: task.description || '',
+                project: task.project?._id || task.project || '',
+                assignedTo: task.assignedTo?._id || task.assignedTo || '',
+                deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
+                status: task.status || 'To-Do'
+            });
+            fetchTaskNotes(task._id);
+        } else {
+            setFormData({
+                title: '',
+                description: '',
+                project: initialProjectId || '',
+                assignedTo: '',
+                deadline: '',
+                status: 'To-Do'
+            });
+            setTaskNotes([]);
+        }
+    }, [task, isOpen, initialProjectId]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,7 +67,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }
             }
         };
         if (isOpen) fetchData();
-    }, [isOpen, user, initialProjectId]);
+    }, [isOpen, user]);
 
     const handleProjectChange = (projectId) => {
         setFormData({ ...formData, project: projectId });
@@ -43,19 +78,15 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }
         setLoading(true);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post('http://localhost:5000/api/tasks', formData, config);
+            if (task) {
+                await axios.put(`http://localhost:5000/api/tasks/${task._id}`, formData, config);
+            } else {
+                await axios.post('http://localhost:5000/api/tasks', formData, config);
+            }
             onSuccess();
             onClose();
-            setFormData({
-                title: '',
-                description: '',
-                project: '',
-                assignedTo: '',
-                deadline: '',
-                status: 'To-Do'
-            });
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to create task');
+            alert(error.response?.data?.message || `Failed to ${task ? 'update' : 'create'} task`);
         } finally {
             setLoading(false);
         }
@@ -74,14 +105,16 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }
             <div style={{
                 background: 'white',
                 width: '100%',
-                maxWidth: '500px',
+                maxWidth: '600px',
                 borderRadius: '24px',
                 padding: '32px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                 animation: 'modalFadeIn 0.3s ease-out'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Create New Task</h2>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{task ? 'Task Details' : 'Create New Task'}</h2>
                     <button onClick={onClose} style={{ border: 'none', background: '#f1f5f9', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                         <FiX />
                     </button>
@@ -171,6 +204,27 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }
                         </div>
                     </div>
 
+                    {task && (
+                        <div style={{ marginBottom: '32px', borderTop: '1px solid #f1f5f9', paddingTop: '24px' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>Member Updates</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {taskNotes.length === 0 ? (
+                                    <p style={{ color: '#94a3b8', fontSize: '0.875rem', textAlign: 'center', background: '#f8fafc', padding: '16px', borderRadius: '12px' }}>No updates from members yet.</p>
+                                ) : (
+                                    taskNotes.map((n) => (
+                                        <div key={n._id} style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <span style={{ fontSize: '0.825rem', fontWeight: 800, color: '#4f46e5' }}>{n.author?.username}</span>
+                                                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{new Date(n.createdAt).toLocaleString()}</span>
+                                            </div>
+                                            <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.5 }}>{n.content}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <button
                         disabled={loading}
                         type="submit"
@@ -191,7 +245,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, initialProjectId = null, user }
                             transition: 'all 0.2s'
                         }}
                     >
-                        {loading ? 'Creating...' : <><FiCheck /> Create Task</>}
+                        {loading ? (task ? 'Updating...' : 'Creating...') : <><FiCheck /> {task ? 'Update Task' : 'Create Task'}</>}
                     </button>
                 </form>
             </div>

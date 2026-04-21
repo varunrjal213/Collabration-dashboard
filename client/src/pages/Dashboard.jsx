@@ -79,6 +79,16 @@ const Dashboard = () => {
         upcomingDeadlines: tasks.filter(t => t.deadline && new Date(t.deadline) > new Date() && t.status !== 'Done').length
     };
 
+    const getDayNumber = (deadline, project) => {
+        if (project?.startDate) {
+            const start = new Date(project.startDate);
+            const end = new Date(deadline);
+            const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            return diff > 0 ? diff : 1;
+        }
+        return new Date(deadline).getDate();
+    };
+
     const getTimeGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good Morning';
@@ -290,7 +300,11 @@ const Dashboard = () => {
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{task.project?.name}</p>
                                             {task.deadline && (
                                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <FiClock /> {new Date(task.deadline).toLocaleDateString()}
+                                                    <FiClock />
+                                                    <span style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                                                        Day {getDayNumber(task.deadline, task.project)}
+                                                    </span>
+                                                    · {new Date(task.deadline).toLocaleDateString()}
                                                 </span>
                                             )}
                                         </div>

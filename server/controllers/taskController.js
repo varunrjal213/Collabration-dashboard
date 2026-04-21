@@ -64,7 +64,7 @@ const updateTask = async (req, res) => {
 // @access  Private
 const getMyTasks = async (req, res) => {
     const tasks = await Task.find({ assignedTo: req.user._id })
-        .populate('project', 'name');
+        .populate('project', 'name startDate');
 
     res.json(tasks);
 };

@@ -32,8 +32,9 @@ const ProjectView = () => {
     const [notes, setNotes] = useState([]);
     const [projectNotes, setProjectNotes] = useState([]); // Consolidated project feed
     const [newNote, setNewNote] = useState('');
-    const [selectedDay, setSelectedDay] = useState(null); // Date object for clicked calendar day
-    const [calendarMonth, setCalendarMonth] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() }); // { year, month }
+    const [noteTaskId, setNoteTaskId] = useState(''); // Specific task to link a note to (from modal)
+    const [taskDetailCalendarMonth, setTaskDetailCalendarMonth] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() });
+    const [taskDayNoteSelectedDate, setTaskDayNoteSelectedDate] = useState(null); // Date for the centered popup
     const socketRef = useRef();
 
     useEffect(() => {
@@ -52,7 +53,6 @@ const ProjectView = () => {
         });
 
         socketRef.current.on('noteAdded', () => {
-            // Refresh notes if a note was added in the project
             fetchProjectNotes();
             if (selectedTask) {
                 fetchNotes(selectedTask._id);
@@ -148,17 +148,31 @@ const ProjectView = () => {
         }
     };
 
-    const handleAddNote = async (e) => {
+    const handleAddNote = async (e, date = null) => {
         e.preventDefault();
-        if (!newNote.trim() || !selectedTask) return;
+        if (!newNote.trim()) return;
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const { data } = await axios.post(`${ENDPOINT}/api/notes`, {
+            const payload = {
                 content: newNote,
-                taskId: selectedTask._id
-            }, config);
+                projectId: id,
+                date: date || new Date()
+            };
+            
+            // Prioritize the task specifically selected for the note (e.g. in calendar modal)
+            if (noteTaskId) {
+                payload.taskId = noteTaskId;
+            } else if (selectedTask) {
+                payload.taskId = selectedTask._id;
+            }
+
+            const { data } = await axios.post(`${ENDPOINT}/api/notes`, payload, config);
             setNewNote('');
-            setNotes([data, ...notes]);
+            setNoteTaskId(''); // Reset after adding
+
+            if (selectedTask || noteTaskId) {
+                setNotes([data, ...notes]);
+            }
             setProjectNotes([data, ...projectNotes]);
             socketRef.current.emit('noteAdded', { projectId: id });
         } catch (error) {
@@ -317,51 +331,10 @@ const ProjectView = () => {
                         </div>
                     </div>
 
-                    {/* Interactive Calendar Component */}
-                    <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', background: 'white' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <FiCalendar style={{ color: 'var(--primary)' }} /> Deadlines
-                            </h3>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={() => setCalendarMonth(prev => ({ ...prev, month: prev.month === 0 ? 11 : prev.month - 1, year: prev.month === 0 ? prev.year - 1 : prev.year }))} style={{ background: '#f1f5f9', width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiChevronLeft /></button>
-                                <button onClick={() => setCalendarMonth(prev => ({ ...prev, month: prev.month === 11 ? 0 : prev.month + 1, year: prev.month === 11 ? prev.year + 1 : prev.year }))} style={{ background: '#f1f5f9', width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiChevronRight /></button>
-                            </div>
-                        </div>
-
-                        <div style={{ marginBottom: '12px', textAlign: 'center', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
-                            {new Date(calendarMonth.year, calendarMonth.month).toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
-                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', padding: '4px 0' }}>{d}</div>)}
-                            {getCalendarDays(calendarMonth.year, calendarMonth.month).map((date, idx) => {
-                                if (!date) return <div key={`empty-${idx}`} />;
-                                const isToday = toMidnight(date).getTime() === toMidnight(new Date()).getTime();
-                                const tasksForDay = tasks.filter(t => t.deadline && toMidnight(new Date(t.deadline)).getTime() === toMidnight(date).getTime());
-                                const isInProjectRange = project.startDate && project.endDate && date >= toMidnight(new Date(project.startDate)) && date <= toMidnight(new Date(project.endDate));
-
-                                return (
-                                    <div key={idx} style={{ 
-                                        aspectRatio: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-                                        borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
-                                        background: isToday ? 'var(--primary)' : (tasksForDay.length > 0 ? '#e0e7ff' : 'transparent'),
-                                        color: isToday ? 'white' : (tasksForDay.length > 0 ? 'var(--primary)' : (isInProjectRange ? 'var(--text-main)' : '#cbd5e1')),
-                                        position: 'relative',
-                                        border: isInProjectRange ? '1px solid #f1f5f9' : 'none'
-                                    }}>
-                                        {date.getDate()}
-                                        {tasksForDay.length > 0 && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: isToday ? 'white' : 'var(--primary)', marginTop: '2px' }} />}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
                     {/* Consolidated Project Feed */}
                     <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', background: 'white', display: 'flex', flexDirection: 'column', maxHeight: '400px' }}>
                         <h3 style={{ fontSize: '1.125rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <FiMessageCircle style={{ color: 'var(--primary)' }} /> Daily Log
+                            <FiMessageCircle style={{ color: 'var(--primary)' }} /> Project Notes
                         </h3>
                         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '8px' }}>
                             {projectNotes.length === 0 ? (
@@ -400,77 +373,110 @@ const ProjectView = () => {
                             <button onClick={() => setSelectedTask(null)} style={{ background: 'transparent', fontSize: '1.25rem' }}><FiX /></button>
                         </div>
 
-                        <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>{selectedTask.title}</h2>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>{selectedTask.description || 'No description provided for this task.'}</p>
+                        <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>{selectedTask.title}</h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '0.875rem' }}>{selectedTask.description || 'No description provided for this task.'}</p>
 
-                        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '24px', paddingRight: '12px' }}>
-                            <div style={{ marginBottom: '32px' }}>
-                                <h3 style={{ fontSize: '1.125rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    Daily Notes
-                                </h3>
-                                
-                                <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                                    <textarea
-                                        placeholder="What changes were made today?"
-                                        value={newNote}
-                                        onChange={(e) => setNewNote(e.target.value)}
-                                        rows={2}
-                                        style={{
-                                            padding: '12px', borderRadius: '12px', border: '1px solid var(--border)',
-                                            outline: 'none', resize: 'none', fontFamily: 'inherit', fontSize: '0.875rem'
-                                        }}
-                                    />
-                                    <button type="submit" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.875rem', alignSelf: 'flex-end', width: 'auto', borderRadius: '8px' }}>Add Note</button>
-                                </form>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {notes.length === 0 && (
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>
-                                            No daily notes yet.
-                                        </p>
-                                    )}
-                                    {notes.map((note) => {
-                                        const noteDate = new Date(note.createdAt);
-                                        const startDate = project.startDate ? new Date(project.startDate) : new Date(project.createdAt);
-                                        
-                                        const resetNoteDate = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate());
-                                        const resetStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-                                        
-                                        const diffTime = resetNoteDate - resetStartDate;
-                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                        const dayNum = diffDays >= 0 ? diffDays + 1 : 1;
-                                        
-                                        return (
-                                        <div key={note._id} style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)' }}>{note.author?.username}</span>
-                                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', background: '#eff6ff', padding: '4px 8px', borderRadius: '6px' }}>
-                                                    Day {dayNum} · {new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                            <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap', marginTop: '6px' }}>
-                                                {note.content}
-                                            </p>
-                                        </div>
-                                    )})}
+                        {/* Task-Specific Mini Calendar */}
+                        <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '20px', border: '1px solid #f1f5f9', marginBottom: '32px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FiCalendar style={{ color: 'var(--primary)' }} /> 
+                                    {new Date(taskDetailCalendarMonth.year, taskDetailCalendarMonth.month).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                </h4>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={() => setTaskDetailCalendarMonth(prev => ({ ...prev, month: prev.month === 0 ? 11 : prev.month - 1, year: prev.month === 0 ? prev.year - 1 : prev.year }))} style={{ background: 'white', border: '1px solid #e2e8f0', width: '24px', height: '24px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiChevronLeft size={14} /></button>
+                                    <button onClick={() => setTaskDetailCalendarMonth(prev => ({ ...prev, month: prev.month === 11 ? 0 : prev.month + 1, year: prev.month === 11 ? prev.year + 1 : prev.year }))} style={{ background: 'white', border: '1px solid #e2e8f0', width: '24px', height: '24px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FiChevronRight size={14} /></button>
                                 </div>
                             </div>
-
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8' }}>{d}</div>)}
+                                {getCalendarDays(taskDetailCalendarMonth.year, taskDetailCalendarMonth.month).map((date, idx) => {
+                                    if (!date) return <div key={`empty-${idx}`} />;
+                                    const isSelected = taskDayNoteSelectedDate && toMidnight(date).getTime() === toMidnight(taskDayNoteSelectedDate).getTime();
+                                    const hasNotes = notes.some(n => toMidnight(new Date(n.date || n.createdAt)).getTime() === toMidnight(date).getTime());
+                                    return (
+                                        <div key={idx} 
+                                            onClick={() => setTaskDayNoteSelectedDate(date)}
+                                            style={{ 
+                                            aspectRatio: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                                            borderRadius: '8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                                            background: (taskDayNoteSelectedDate && toMidnight(date).getTime() === toMidnight(taskDayNoteSelectedDate).getTime()) ? 'var(--primary)' : 'transparent',
+                                            color: (taskDayNoteSelectedDate && toMidnight(date).getTime() === toMidnight(taskDayNoteSelectedDate).getTime()) ? 'white' : 'var(--text-main)',
+                                            position: 'relative', transition: 'all 0.2s'
+                                        }}>
+                                            {date.getDate()}
+                                            {hasNotes && <div style={{ position: 'absolute', bottom: '4px', width: '3px', height: '3px', borderRadius: '50%', background: (taskDayNoteSelectedDate && toMidnight(date).getTime() === toMidnight(taskDayNoteSelectedDate).getTime()) ? 'white' : 'var(--primary)' }} />}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
+
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
+                            <div style={{ background: '#f8fafc', padding: '32px', borderRadius: '24px', border: '1px dashed #e2e8f0' }}>
+                                <p style={{ fontSize: '0.875rem' }}>Click any date in the calendar<br/>to view or add daily task updates.</p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             )}
 
-            <style>{`
-                @keyframes slideIn {
-                    from { transform: translateX(100%); }
-                    to { transform: translateX(0); }
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
+            {/* Task Day Note Popup */}
+            {taskDayNoteSelectedDate && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 200
+                }} onClick={() => setTaskDayNoteSelectedDate(null)}>
+                    <div style={{
+                        width: '500px', background: 'white', borderRadius: '24px',
+                        padding: '32px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+                        display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.3s ease-out',
+                        maxHeight: '80vh', overflowY: 'auto'
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Notes for {taskDayNoteSelectedDate.toLocaleDateString([], { month: 'long', day: 'numeric' })}</h3>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{selectedTask?.title}</p>
+                            </div>
+                            <button onClick={() => setTaskDayNoteSelectedDate(null)} style={{ background: 'transparent', fontSize: '1.25rem', color: 'var(--text-muted)' }}><FiX /></button>
+                        </div>
+
+                        <form onSubmit={(e) => handleAddNote(e, taskDayNoteSelectedDate)} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <textarea
+                                placeholder={`Add a note for this date...`}
+                                value={newNote}
+                                onChange={(e) => setNewNote(e.target.value)}
+                                rows={3}
+                                style={{
+                                    padding: '16px', borderRadius: '16px', border: '1px solid var(--border)',
+                                    outline: 'none', resize: 'none', fontFamily: 'inherit', fontSize: '0.875rem',
+                                    background: '#f8fafc'
+                                }}
+                            />
+                            <button type="submit" className="btn-primary" style={{ padding: '12px', borderRadius: '12px', fontWeight: 700 }}>Save Update</button>
+                        </form>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                            <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Daily Logs</h4>
+                            {notes.filter(n => toMidnight(new Date(n.date || n.createdAt)).getTime() === toMidnight(taskDayNoteSelectedDate).getTime()).length === 0 ? (
+                                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '24px', background: '#f8fafc', borderRadius: '16px' }}>No notes for this date yet.</p>
+                            ) : (
+                                notes.filter(n => toMidnight(new Date(n.date || n.createdAt)).getTime() === toMidnight(taskDayNoteSelectedDate).getTime()).map((note) => (
+                                    <div key={note._id} style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '0.825rem', fontWeight: 800 }}>{note.author?.username}</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.5 }}>{note.content}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
